@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Responsive Image Gallery</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#4f46e5',secondary:'#10b981'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Inter', sans-serif;
+}
+.gallery-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 1.25rem;
+}
+@media (max-width: 1024px) {
+.gallery-grid {
+grid-template-columns: repeat(3, 1fr);
+}
+}
+@media (max-width: 768px) {
+.gallery-grid {
+grid-template-columns: repeat(2, 1fr);
+}
+}
+@media (max-width: 480px) {
+.gallery-grid {
+grid-template-columns: 1fr;
+}
+}
+.gallery-item {
+position: relative;
+overflow: hidden;
+border-radius: 8px;
+aspect-ratio: 4/3;
+cursor: pointer;
+transition: transform 0.3s ease;
+}
+.gallery-item:hover {
+transform: scale(1.02);
+}
+.gallery-item img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+object-position: top;
+transition: 0.3s ease;
+}
+.gallery-item:hover img {
+filter: brightness(1.1);
+}
+.modal {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0, 0, 0, 0.85);
+z-index: 100;
+opacity: 0;
+transition: opacity 0.3s ease;
+}
+.modal.active {
+display: flex;
+opacity: 1;
+}
+.modal-content {
+position: relative;
+max-width: 90%;
+max-height: 90%;
+margin: auto;
+}
+.modal-image {
+max-width: 100%;
+max-height: 85vh;
+object-fit: contain;
+border-radius: 4px;
+}
+.modal-caption {
+color: white;
+text-align: center;
+padding: 1rem 0;
+font-size: 1rem;
+}
+.modal-close, .modal-prev, .modal-next {
+background-color: rgba(255, 255, 255, 0.2);
+color: white;
+border: none;
+cursor: pointer;
+transition: background-color 0.3s ease, opacity 0.3s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.modal-close:hover, .modal-prev:hover, .modal-next:hover {
+background-color: rgba(255, 255, 255, 0.3);
+}
+.modal-close {
+position: absolute;
+top: -40px;
+right: 0;
+width: 36px;
+height: 36px;
+border-radius: 50%;
+}
+.modal-prev, .modal-next {
+position: absolute;
+top: 50%;
+transform: translateY(-50%);
+width: 48px;
+height: 48px;
+border-radius: 50%;
+}
+.modal-prev {
+left: -60px;
+}
+.modal-next {
+right: -60px;
+}
+.category-filter {
+position: relative;
+}
+.category-dropdown {
+display: none;
+position: absolute;
+top: 100%;
+right: 0;
+background-color: white;
+border-radius: 8px;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+z-index: 10;
+min-width: 160px;
+margin-top: 0.5rem;
+}
+.category-dropdown.show {
+display: block;
+}
+.category-option {
+padding: 0.75rem 1rem;
+cursor: pointer;
+transition: background-color 0.2s ease;
+white-space: nowrap;
+}
+.category-option:hover {
+background-color: #f3f4f6;
+}
+.category-option.active {
+background-color: #ebe9fe;
+color: #4f46e5;
+}
+.switch {
+position: relative;
+display: inline-block;
+width: 48px;
+height: 24px;
+}
+.switch input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.slider {
+position: absolute;
+cursor: pointer;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-color: #e5e7eb;
+transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+border-radius: 24px;
+box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.slider:before {
+position: absolute;
+content: "";
+height: 18px;
+width: 18px;
+left: 3px;
+bottom: 3px;
+background-color: white;
+transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+border-radius: 50%;
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+input:checked + .slider {
+background-color: #4f46e5;
+}
+input:checked + .slider:before {
+transform: translateX(24px);
+background-color: white;
+}
+.slider:hover:before {
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.fade-in {
+animation: fadeIn 0.5s ease forwards;
+}
+@keyframes fadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<header class="fixed top-0 left-0 w-full bg-white shadow-sm z-50">
+<div class="container mx-auto px-4 py-4 flex items-center justify-between">
+<h1 class="text-2xl font-semibold text-gray-800 font-['Pacifico']">Artistry</h1>
+<div class="flex items-center space-x-4">
+<div class="category-filter">
+<button id="categoryButton" class="px-4 py-2 bg-white border border-gray-200 rounded-button flex items-center space-x-2 text-sm text-gray-700 hover:bg-gray-50 transition whitespace-nowrap">
+<span>All Categories</span>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="categoryDropdown" class="category-dropdown">
+<div class="category-option active" data-category="all">All Categories</div>
+<div class="category-option" data-category="nature">Nature</div>
+<div class="category-option" data-category="architecture">Architecture</div>
+<div class="category-option" data-category="people">People</div>
+<div class="category-option" data-category="animals">Animals</div>
+<div class="category-option" data-category="food">Food</div>
+<div class="category-option" data-category="abstract">Abstract</div>
+<div class="category-option" data-category="urban">Urban</div>
+<div class="category-option" data-category="travel">Travel</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<div class="w-5 h-5 flex items-center justify-center text-gray-600">
+<i class="ri-sun-line"></i>
+</div>
+<label class="switch">
+<input type="checkbox" id="themeToggle">
+<span class="slider"></span>
+</label>
+<div class="w-5 h-5 flex items-center justify-center text-gray-600">
+<i class="ri-moon-line"></i>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="container mx-auto px-4 pt-24 pb-16">
+<section class="mb-8">
+<h2 class="text-3xl font-bold text-gray-800 mb-2">Explore the Gallery</h2>
+<p class="text-gray-600">Discover a curated collection of stunning visuals from around the world</p>
+</section>
+<div class="gallery-grid" id="galleryGrid">
+<!-- Images will be generated dynamically -->
+</div>
+</main>
+<div class="modal" id="imageModal">
+<div class="modal-content">
+<button class="modal-close !rounded-button" id="modalClose">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-close-line"></i>
+</div>
+</button>
+<img src="" alt="" class="modal-image" id="modalImage">
+<div class="modal-caption" id="modalCaption"></div>
+<button class="modal-prev !rounded-button" id="modalPrev">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-arrow-left-line"></i>
+</div>
+</button>
+<button class="modal-next !rounded-button" id="modalNext">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-arrow-right-line"></i>
+</div>
+</button>
+</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Gallery data
+const galleryItems = [
+{
+id: 57,
+src: "https://readdy.ai/api/search-image?query=ancient%20buddhist%20temple%20in%20morning%20mist%2C%20professional%20architectural%20photography%2C%20spiritual%20atmosphere%2C%20golden%20sunrise%20light%2C%20traditional%20asian%20architecture%2C%20stone%20steps%2C%20mystical%20fog%2C%20ultra%20high%20resolution&width=800&height=600&seq=57&orientation=landscape",
+alt: "Misty Buddhist temple",
+caption: "Ancient temple emerging from morning mist",
+category: "architecture"
+},
+{
+id: 58,
+src: "https://readdy.ai/api/search-image?query=artisanal%20chocolate%20making%20process%2C%20professional%20food%20photography%2C%20melted%20chocolate%20swirls%2C%20handcrafted%20confections%2C%20rich%20textures%2C%20warm%20lighting%2C%20culinary%20artistry%2C%20ultra%20high%20resolution&width=800&height=600&seq=58&orientation=landscape",
+alt: "Artisanal chocolate making",
+caption: "Crafting fine chocolate by hand",
+category: "food"
+},
+{
+id: 59,
+src: "https://readdy.ai/api/search-image?query=ink%20and%20water%20abstract%20photography%2C%20professional%20macro%20photography%2C%20fluid%20dynamics%2C%20mesmerizing%20patterns%2C%20artistic%20composition%2C%20dark%20background%2C%20ethereal%20movement%2C%20ultra%20high%20resolution&width=800&height=600&seq=59&orientation=landscape",
+alt: "Ink in water abstract",
+caption: "Ethereal dance of ink in water",
+category: "abstract"
+},
+{
+id: 60,
+src: "https://readdy.ai/api/search-image?query=traditional%20moroccan%20souk%20marketplace%2C%20professional%20travel%20photography%2C%20colorful%20spice%20displays%2C%20authentic%20atmosphere%2C%20historic%20architecture%2C%20bustling%20activity%2C%20cultural%20heritage%2C%20ultra%20high%20resolution&width=800&height=600&seq=60&orientation=landscape",
+alt: "Moroccan spice market",
+caption: "Vibrant colors of a traditional Moroccan souk",
+category: "travel"
+},
+{
+id: 61,
+src: "https://readdy.ai/api/search-image?query=modern%20eco%20friendly%20smart%20city%20concept%2C%20professional%20urban%20photography%2C%20sustainable%20architecture%2C%20green%20technology%2C%20innovative%20design%2C%20clean%20energy%20integration%2C%20future%20living%2C%20ultra%20high%20resolution&width=800&height=600&seq=61&orientation=landscape",
+alt: "Smart city concept",
+caption: "Future of sustainable urban living",
+category: "urban"
+},
+{
+id: 62,
+src: "https://readdy.ai/api/search-image?query=rare%20orchid%20species%20in%20natural%20habitat%2C%20professional%20nature%20photography%2C%20delicate%20petals%2C%20exotic%20colors%2C%20rainforest%20setting%2C%20perfect%20lighting%2C%20botanical%20beauty%2C%20ultra%20high%20resolution&width=800&height=600&seq=62&orientation=landscape",
+alt: "Rare orchid species",
+caption: "Exotic orchid in its natural environment",
+category: "nature"
+},
+{
+id: 63,
+src: "https://readdy.ai/api/search-image?query=traditional%20kimono%20artisan%20at%20work%2C%20professional%20cultural%20photography%2C%20detailed%20craftsmanship%2C%20authentic%20workshop%2C%20concentration%20expression%2C%20japanese%20heritage%2C%20artistic%20process%2C%20ultra%20high%20resolution&width=800&height=600&seq=63&orientation=landscape",
+alt: "Kimono artisan working",
+caption: "Master craftsman creating traditional kimono",
+category: "people"
+},
+{
+id: 64,
+src: "https://readdy.ai/api/search-image?query=rare%20white%20tiger%20in%20lush%20jungle%2C%20professional%20wildlife%20photography%2C%20powerful%20predator%2C%20natural%20habitat%2C%20striking%20eyes%2C%20majestic%20pose%2C%20endangered%20species%2C%20ultra%20high%20resolution&width=800&height=600&seq=64&orientation=landscape",
+alt: "White tiger in jungle",
+caption: "Majestic white tiger in natural habitat",
+category: "animals"
+},
+{
+id: 65,
+src: "https://readdy.ai/api/search-image?query=modern%20glass%20art%20installation%20in%20contemporary%20museum%2C%20professional%20architectural%20photography%2C%20artistic%20lighting%2C%20geometric%20design%2C%20reflective%20surfaces%2C%20creative%20expression%2C%20cultural%20space%2C%20ultra%20high%20resolution&width=800&height=600&seq=65&orientation=landscape",
+alt: "Glass art installation",
+caption: "Contemporary glass art in modern space",
+category: "architecture"
+},
+{
+id: 66,
+src: "https://readdy.ai/api/search-image?query=traditional%20sushi%20omakase%20presentation%2C%20professional%20food%20photography%2C%20expert%20knife%20work%2C%20fresh%20ingredients%2C%20artistic%20plating%2C%20japanese%20cuisine%2C%20culinary%20perfection%2C%20ultra%20high%20resolution&width=800&height=600&seq=66&orientation=landscape",
+alt: "Sushi omakase",
+caption: "Artfully crafted sushi omakase",
+category: "food"
+},
+{
+id: 67,
+src: "https://readdy.ai/api/search-image?query=crystal%20formation%20macro%20photography%2C%20professional%20abstract%20photography%2C%20natural%20geometry%2C%20mineral%20structures%2C%20prismatic%20colors%2C%20scientific%20beauty%2C%20artistic%20composition%2C%20ultra%20high%20resolution&width=800&height=600&seq=67&orientation=landscape",
+alt: "Crystal formations",
+caption: "Natural geometry in crystal structures",
+category: "abstract"
+},
+{
+id: 68,
+src: "https://readdy.ai/api/search-image?query=ancient%20incan%20ruins%20at%20machu%20picchu%20in%20morning%20light%2C%20professional%20travel%20photography%2C%20mystical%20atmosphere%2C%20mountain%20backdrop%2C%20historic%20preservation%2C%20architectural%20wonder%2C%20cultural%20heritage%2C%20ultra%20high%20resolution&width=800&height=600&seq=68&orientation=landscape",
+alt: "Machu Picchu ruins",
+caption: "Dawn light over ancient Incan citadel",
+category: "travel"
+},
+{
+id: 69,
+src: "https://readdy.ai/api/search-image?query=underwater%20kelp%20forest%20with%20sunlight%20streaming%2C%20professional%20nature%20photography%2C%20marine%20ecosystem%2C%20golden%20light%20rays%2C%20peaceful%20atmosphere%2C%20ocean%20biodiversity%2C%20natural%20wonder%2C%20ultra%20high%20resolution&width=800&height=600&seq=69&orientation=landscape",
+alt: "Underwater kelp forest",
+caption: "Sunlit underwater kelp forest",
+category: "nature"
+},
+{
+id: 70,
+src: "https://readdy.ai/api/search-image?query=traditional%20berber%20nomad%20in%20sahara%20desert%2C%20professional%20portrait%20photography%2C%20cultural%20authenticity%2C%20weathered%20features%2C%20traditional%20clothing%2C%20desert%20landscape%2C%20human%20spirit%2C%20ultra%20high%20resolution&width=800&height=600&seq=70&orientation=landscape",
+alt: "Berber nomad portrait",
+caption: "Portrait of desert nomad's resilient spirit",
+category: "people"
+},
+{
+id: 71,
+src: "https://readdy.ai/api/search-image?query=rare%20mountain%20gorilla%20family%20in%20misty%20forest%2C%20professional%20wildlife%20photography%2C%20intimate%20moment%2C%20natural%20behavior%2C%20endangered%20species%2C%20lush%20habitat%2C%20primate%20interaction%2C%20ultra%20high%20resolution&width=800&height=600&seq=71&orientation=landscape",
+alt: "Mountain gorilla family",
+caption: "Intimate moment with mountain gorilla family",
+category: "animals"
+},
+{
+id: 72,
+src: "https://readdy.ai/api/search-image?query=futuristic%20transportation%20hub%20at%20night%2C%20professional%20urban%20photography%2C%20modern%20architecture%2C%20electric%20vehicles%2C%20sustainable%20design%2C%20city%20lights%2C%20innovative%20infrastructure%2C%20ultra%20high%20resolution&width=800&height=600&seq=72&orientation=landscape",
+alt: "Future transport hub",
+caption: "Next-generation urban transportation center",
+category: "urban"
+},
+{
+id: 41,
+src: "https://readdy.ai/api/search-image?query=traditional%20moroccan%20riad%20courtyard%20with%20intricate%20tile%20work%20and%20fountain%2C%20professional%20architectural%20photography%2C%20authentic%20design%2C%20natural%20light%20streaming%2C%20peaceful%20atmosphere%2C%20cultural%20heritage%2C%20detailed%20patterns%2C%20ultra%20high%20resolution&width=800&height=600&seq=41&orientation=landscape",
+alt: "Moroccan riad courtyard",
+caption: "Traditional Moroccan riad with intricate details",
+category: "architecture"
+},
+{
+id: 42,
+src: "https://readdy.ai/api/search-image?query=molecular%20gastronomy%20dish%20with%20artistic%20presentation%2C%20professional%20food%20photography%2C%20modern%20culinary%20art%2C%20smoke%20effects%2C%20dramatic%20lighting%2C%20innovative%20plating%2C%20scientific%20cuisine%2C%20ultra%20high%20resolution&width=800&height=600&seq=42&orientation=landscape",
+alt: "Molecular gastronomy dish",
+caption: "Innovative molecular gastronomy creation",
+category: "food"
+},
+{
+id: 43,
+src: "https://readdy.ai/api/search-image?query=traditional%20venetian%20carnival%20performer%20in%20elaborate%20costume%2C%20professional%20portrait%20photography%2C%20ornate%20mask%2C%20rich%20fabrics%2C%20historic%20setting%2C%20dramatic%20pose%2C%20cultural%20festival%2C%20ultra%20high%20resolution&width=800&height=600&seq=43&orientation=landscape",
+alt: "Venetian carnival performer",
+caption: "Elegant Venetian carnival masquerade",
+category: "people"
+},
+{
+id: 44,
+src: "https://readdy.ai/api/search-image?query=abstract%20photography%20of%20frozen%20soap%20bubbles%20with%20crystalline%20patterns%2C%20professional%20macro%20photography%2C%20ice%20crystals%2C%20natural%20geometry%2C%20winter%20art%2C%20delicate%20structures%2C%20magical%20moment%2C%20ultra%20high%20resolution&width=800&height=600&seq=44&orientation=landscape",
+alt: "Frozen bubble patterns",
+caption: "Ethereal patterns in frozen bubbles",
+category: "abstract"
+},
+{
+id: 45,
+src: "https://readdy.ai/api/search-image?query=endangered%20pangolin%20in%20natural%20habitat%2C%20professional%20wildlife%20photography%2C%20unique%20scales%20texture%2C%20nocturnal%20creature%2C%20conservation%20focus%2C%20rare%20species%2C%20natural%20behavior%2C%20ultra%20high%20resolution&width=800&height=600&seq=45&orientation=landscape",
+alt: "Pangolin in nature",
+caption: "Rare glimpse of an endangered pangolin",
+category: "animals"
+},
+{
+id: 46,
+src: "https://readdy.ai/api/search-image?query=modern%20glass%20skybridge%20between%20skyscrapers%2C%20professional%20architectural%20photography%2C%20urban%20innovation%2C%20dramatic%20height%2C%20city%20views%2C%20contemporary%20design%2C%20engineering%20marvel%2C%20ultra%20high%20resolution&width=800&height=600&seq=46&orientation=landscape",
+alt: "Modern skybridge",
+caption: "Innovative skybridge connecting urban towers",
+category: "urban"
+},
+{
+id: 47,
+src: "https://readdy.ai/api/search-image?query=ancient%20petra%20monastery%20at%20sunset%2C%20professional%20travel%20photography%2C%20rose-colored%20stone%2C%20dramatic%20desert%20landscape%2C%20historical%20architecture%2C%20golden%20hour%20light%2C%20majestic%20scale%2C%20ultra%20high%20resolution&width=800&height=600&seq=47&orientation=landscape",
+alt: "Petra monastery",
+caption: "Ancient Petra monastery bathed in sunset light",
+category: "travel"
+},
+{
+id: 48,
+src: "https://readdy.ai/api/search-image?query=bioluminescent%20plankton%20on%20tropical%20beach%20at%20night%2C%20professional%20nature%20photography%2C%20glowing%20blue%20waves%2C%20starry%20sky%2C%20natural%20phenomenon%2C%20magical%20atmosphere%2C%20pristine%20shoreline%2C%20ultra%20high%20resolution&width=800&height=600&seq=48&orientation=landscape",
+alt: "Bioluminescent beach",
+caption: "Magical bioluminescent shoreline at night",
+category: "nature"
+},
+{
+id: 49,
+src: "https://readdy.ai/api/search-image?query=traditional%20sushi%20master%20at%20work%2C%20professional%20documentary%20photography%2C%20precise%20knife%20skills%2C%20authentic%20japanese%20kitchen%2C%20concentration%20expression%2C%20cultural%20preservation%2C%20culinary%20art%2C%20ultra%20high%20resolution&width=800&height=600&seq=49&orientation=landscape",
+alt: "Sushi master working",
+caption: "Master sushi chef practicing ancient art",
+category: "people"
+},
+{
+id: 50,
+src: "https://readdy.ai/api/search-image?query=modern%20art%20museum%20exterior%20at%20blue%20hour%2C%20professional%20architectural%20photography%2C%20contemporary%20design%2C%20dramatic%20lighting%2C%20geometric%20shapes%2C%20cultural%20institution%2C%20artistic%20vision%2C%20ultra%20high%20resolution&width=800&height=600&seq=50&orientation=landscape",
+alt: "Modern museum exterior",
+caption: "Contemporary museum architecture at twilight",
+category: "architecture"
+},
+{
+id: 51,
+src: "https://readdy.ai/api/search-image?query=close%20up%20of%20honeycomb%20with%20bees%2C%20professional%20macro%20photography%2C%20natural%20geometry%2C%20golden%20honey%2C%20busy%20workers%2C%20intricate%20structure%2C%20natural%20wonder%2C%20ultra%20high%20resolution&width=800&height=600&seq=51&orientation=landscape",
+alt: "Honeycomb with bees",
+caption: "Intricate beauty of natural honeycomb",
+category: "nature"
+},
+{
+id: 52,
+src: "https://readdy.ai/api/search-image?query=traditional%20chinese%20tea%20ceremony%20with%20authentic%20pottery%2C%20professional%20food%20photography%2C%20steam%20rising%2C%20cultural%20ritual%2C%20ancient%20tradition%2C%20mindful%20practice%2C%20artistic%20presentation%2C%20ultra%20high%20resolution&width=800&height=600&seq=52&orientation=landscape",
+alt: "Chinese tea ceremony",
+caption: "Traditional Chinese tea ceremony ritual",
+category: "food"
+},
+{
+id: 53,
+src: "https://readdy.ai/api/search-image?query=abstract%20light%20trails%20in%20modern%20city%20at%20night%2C%20professional%20urban%20photography%2C%20long%20exposure%2C%20city%20motion%2C%20dynamic%20energy%2C%20urban%20rhythm%2C%20artistic%20interpretation%2C%20ultra%20high%20resolution&width=800&height=600&seq=53&orientation=landscape",
+alt: "Urban light trails",
+caption: "Abstract patterns of city motion at night",
+category: "abstract"
+},
+{
+id: 54,
+src: "https://readdy.ai/api/search-image?query=majestic%20condor%20soaring%20over%20andes%20mountains%2C%20professional%20wildlife%20photography%2C%20wingspan%20detail%2C%20mountain%20habitat%2C%20endangered%20species%2C%20natural%20behavior%2C%20dramatic%20landscape%2C%20ultra%20high%20resolution&width=800&height=600&seq=54&orientation=landscape",
+alt: "Andean condor flying",
+caption: "Majestic condor soaring over mountains",
+category: "animals"
+},
+{
+id: 55,
+src: "https://readdy.ai/api/search-image?query=traditional%20medina%20streets%20in%20fes%20morocco%2C%20professional%20travel%20photography%2C%20ancient%20architecture%2C%20bustling%20market%20life%2C%20cultural%20heritage%2C%20authentic%20atmosphere%2C%20historic%20preservation%2C%20ultra%20high%20resolution&width=800&height=600&seq=55&orientation=landscape",
+alt: "Fes medina streets",
+caption: "Historic streets of Fes medina",
+category: "travel"
+},
+{
+id: 56,
+src: "https://readdy.ai/api/search-image?query=futuristic%20sustainable%20city%20garden%20integration%2C%20professional%20urban%20photography%2C%20vertical%20forests%2C%20green%20architecture%2C%20innovative%20design%2C%20eco-friendly%20development%2C%20urban%20nature%2C%20ultra%20high%20resolution&width=800&height=600&seq=56&orientation=landscape",
+alt: "Sustainable urban garden",
+caption: "Future of green urban development",
+category: "urban"
+},
+{
+id: 1,
+src: "https://readdy.ai/api/search-image?query=stunning%20landscape%20photograph%20of%20a%20mountain%20range%20at%20sunset%20with%20dramatic%20clouds%20and%20golden%20light%2C%20vibrant%20colors%2C%20majestic%20peaks%2C%20professional%20photography%20with%20high%20dynamic%20range%2C%20serene%20mountain%20lake%20reflection%2C%20ultra%20high%20resolution&width=800&height=600&seq=1&orientation=landscape",
+alt: "Mountain landscape at sunset",
+caption: "Majestic mountain range at golden hour",
+category: "nature"
+},
+{
+id: 25,
+src: "https://readdy.ai/api/search-image?query=luxurious%20fine%20dining%20dish%20presentation%2C%20professional%20culinary%20photography%2C%20michelin%20star%20restaurant%20quality%2C%20artistic%20food%20plating%2C%20dramatic%20lighting%2C%20exquisite%20garnish%2C%20gastronomic%20excellence%2C%20ultra%20high%20resolution&width=800&height=600&seq=25&orientation=landscape",
+alt: "Fine dining presentation",
+caption: "Exquisite culinary artistry in fine dining",
+category: "food"
+},
+{
+id: 26,
+src: "https://readdy.ai/api/search-image?query=abstract%20light%20painting%20photography%20with%20long%20exposure%2C%20professional%20light%20art%2C%20vibrant%20streaks%20of%20color%2C%20creative%20motion%20blur%2C%20artistic%20composition%2C%20experimental%20photography%2C%20dynamic%20movement%2C%20ultra%20high%20resolution&width=800&height=600&seq=26&orientation=landscape",
+alt: "Abstract light painting",
+caption: "Dynamic light painting in motion",
+category: "abstract"
+},
+{
+id: 27,
+src: "https://readdy.ai/api/search-image?query=santorini%20greece%20traditional%20white%20architecture%20with%20blue%20domes%20at%20sunset%2C%20professional%20travel%20photography%2C%20mediterranean%20atmosphere%2C%20stunning%20coastal%20views%2C%20iconic%20destination%2C%20golden%20hour%20lighting%2C%20pristine%20condition%2C%20ultra%20high%20resolution&width=800&height=600&seq=27&orientation=landscape",
+alt: "Santorini sunset",
+caption: "Iconic Santorini architecture at sunset",
+category: "travel"
+},
+{
+id: 28,
+src: "https://readdy.ai/api/search-image?query=modern%20urban%20vertical%20garden%20on%20skyscraper%20facade%2C%20professional%20architectural%20photography%2C%20sustainable%20green%20design%2C%20innovative%20city%20planning%2C%20living%20wall%2C%20contemporary%20eco%20architecture%2C%20dramatic%20scale%2C%20ultra%20high%20resolution&width=800&height=600&seq=28&orientation=landscape",
+alt: "Vertical garden architecture",
+caption: "Innovative vertical gardens in urban architecture",
+category: "urban"
+},
+{
+id: 29,
+src: "https://readdy.ai/api/search-image?query=northern%20lights%20dancing%20over%20snow%20covered%20landscape%2C%20professional%20nature%20photography%2C%20aurora%20borealis%2C%20starry%20night%20sky%2C%20arctic%20wilderness%2C%20magical%20atmosphere%2C%20winter%20wonderland%2C%20ultra%20high%20resolution&width=800&height=600&seq=29&orientation=landscape",
+alt: "Northern lights display",
+caption: "Mesmerizing aurora borealis in arctic night",
+category: "nature"
+},
+{
+id: 30,
+src: "https://readdy.ai/api/search-image?query=grand%20central%20terminal%20new%20york%20main%20concourse%2C%20professional%20architectural%20photography%2C%20beaux%20arts%20architecture%2C%20streaming%20light%20rays%2C%20historic%20landmark%2C%20bustling%20atmosphere%2C%20architectural%20grandeur%2C%20ultra%20high%20resolution&width=800&height=600&seq=30&orientation=landscape",
+alt: "Grand Central Terminal",
+caption: "Historic grandeur of Grand Central Terminal",
+category: "architecture"
+},
+{
+id: 31,
+src: "https://readdy.ai/api/search-image?query=traditional%20tea%20ceremony%20master%20in%20kyoto%2C%20professional%20cultural%20photography%2C%20authentic%20japanese%20culture%2C%20serene%20atmosphere%2C%20precise%20movements%2C%20traditional%20clothing%2C%20mindful%20practice%2C%20ultra%20high%20resolution&width=800&height=600&seq=31&orientation=landscape",
+alt: "Japanese tea ceremony",
+caption: "Master performing traditional tea ceremony",
+category: "people"
+},
+{
+id: 32,
+src: "https://readdy.ai/api/search-image?query=snow%20leopard%20in%20himalayan%20habitat%2C%20professional%20wildlife%20photography%2C%20camouflaged%20predator%2C%20snowy%20mountain%20environment%2C%20rare%20big%20cat%2C%20natural%20behavior%2C%20majestic%20creature%2C%20ultra%20high%20resolution&width=800&height=600&seq=32&orientation=landscape",
+alt: "Snow leopard in mountains",
+caption: "Elusive snow leopard in natural habitat",
+category: "animals"
+},
+{
+id: 33,
+src: "https://readdy.ai/api/search-image?query=artisanal%20cheese%20and%20wine%20pairing%20presentation%2C%20professional%20food%20photography%2C%20gourmet%20selection%2C%20rustic%20wooden%20board%2C%20perfect%20arrangement%2C%20soft%20natural%20lighting%2C%20luxury%20dining%20experience%2C%20ultra%20high%20resolution&width=800&height=600&seq=33&orientation=landscape",
+alt: "Cheese and wine pairing",
+caption: "Curated artisanal cheese and wine experience",
+category: "food"
+},
+{
+id: 34,
+src: "https://readdy.ai/api/search-image?query=abstract%20macro%20photography%20of%20soap%20bubbles%2C%20professional%20abstract%20photography%2C%20iridescent%20colors%2C%20delicate%20patterns%2C%20surface%20tension%2C%20artistic%20composition%2C%20natural%20phenomenon%2C%20ultra%20high%20resolution&width=800&height=600&seq=34&orientation=landscape",
+alt: "Abstract bubble patterns",
+caption: "Mesmerizing patterns in soap bubbles",
+category: "abstract"
+},
+{
+id: 35,
+src: "https://readdy.ai/api/search-image?query=ancient%20petra%20treasury%20at%20night%20illuminated%20by%20candlelight%2C%20professional%20travel%20photography%2C%20archaeological%20wonder%2C%20dramatic%20lighting%2C%20historic%20atmosphere%2C%20desert%20setting%2C%20magical%20moment%2C%20ultra%20high%20resolution&width=800&height=600&seq=35&orientation=landscape",
+alt: "Petra by night",
+caption: "Ancient Petra Treasury illuminated at night",
+category: "travel"
+},
+{
+id: 36,
+src: "https://readdy.ai/api/search-image?query=urban%20night%20market%20in%20hong%20kong%2C%20professional%20street%20photography%2C%20neon%20lights%2C%20bustling%20atmosphere%2C%20street%20food%20stalls%2C%20city%20life%2C%20vibrant%20culture%2C%20ultra%20high%20resolution&width=800&height=600&seq=36&orientation=landscape",
+alt: "Hong Kong night market",
+caption: "Vibrant night market scene in Hong Kong",
+category: "urban"
+},
+{
+id: 37,
+src: "https://readdy.ai/api/search-image?query=bioluminescent%20waves%20on%20tropical%20beach%20at%20night%2C%20professional%20nature%20photography%2C%20natural%20phenomenon%2C%20glowing%20blue%20waves%2C%20starry%20sky%2C%20magical%20atmosphere%2C%20pristine%20coastline%2C%20ultra%20high%20resolution&width=800&height=600&seq=37&orientation=landscape",
+alt: "Bioluminescent waves",
+caption: "Magical bioluminescent waves at night",
+category: "nature"
+},
+{
+id: 38,
+src: "https://readdy.ai/api/search-image?query=sagrada%20familia%20interior%20with%20sunlight%20through%20stained%20glass%2C%20professional%20architectural%20photography%2C%20gaudi%20masterpiece%2C%20colorful%20light%20patterns%2C%20gothic%20architecture%2C%20spiritual%20atmosphere%2C%20architectural%20details%2C%20ultra%20high%20resolution&width=800&height=600&seq=38&orientation=landscape",
+alt: "Sagrada Familia interior",
+caption: "Stunning light play inside Sagrada Familia",
+category: "architecture"
+},
+{
+id: 39,
+src: "https://readdy.ai/api/search-image?query=portrait%20of%20indigenous%20elder%20with%20traditional%20face%20paint%2C%20professional%20portrait%20photography%2C%20cultural%20heritage%2C%20weathered%20features%2C%20authentic%20expression%2C%20tribal%20wisdom%2C%20human%20connection%2C%20ultra%20high%20resolution&width=800&height=600&seq=39&orientation=landscape",
+alt: "Indigenous elder portrait",
+caption: "Wisdom in the eyes of an indigenous elder",
+category: "people"
+},
+{
+id: 40,
+src: "https://readdy.ai/api/search-image?query=hummingbird%20feeding%20on%20exotic%20flower%2C%20professional%20wildlife%20photography%2C%20freeze%20motion%2C%20iridescent%20feathers%2C%20natural%20garden%20setting%2C%20perfect%20timing%2C%20delicate%20interaction%2C%20ultra%20high%20resolution&width=800&height=600&seq=40&orientation=landscape",
+alt: "Hummingbird feeding",
+caption: "Graceful hummingbird in perfect moment",
+category: "animals"
+},
+{
+id: 17,
+src: "https://readdy.ai/api/search-image?query=gourmet%20plated%20dessert%20with%20artistic%20presentation%2C%20professional%20food%20photography%2C%20soft%20natural%20lighting%2C%20rich%20textures%2C%20elegant%20restaurant%20setting%2C%20culinary%20masterpiece%2C%20exquisite%20details%2C%20ultra%20high%20resolution&width=800&height=600&seq=17&orientation=landscape",
+alt: "Gourmet dessert plating",
+caption: "Artistically plated gourmet dessert",
+category: "food"
+},
+{
+id: 18,
+src: "https://readdy.ai/api/search-image?query=abstract%20fluid%20art%20photography%20with%20vibrant%20colors%20swirling%20together%2C%20professional%20macro%20photography%2C%20paint%20mixing%20patterns%2C%20artistic%20composition%2C%20mesmerizing%20textures%2C%20creative%20expression%2C%20ultra%20high%20resolution&width=800&height=600&seq=18&orientation=landscape",
+alt: "Abstract fluid art",
+caption: "Mesmerizing abstract fluid patterns",
+category: "abstract"
+},
+{
+id: 19,
+src: "https://readdy.ai/api/search-image?query=traditional%20European%20cafe%20terrace%20with%20cobblestone%20street%2C%20professional%20travel%20photography%2C%20charming%20architecture%2C%20morning%20light%2C%20cafe%20culture%2C%20historic%20atmosphere%2C%20authentic%20scene%2C%20ultra%20high%20resolution&width=800&height=600&seq=19&orientation=landscape",
+alt: "European cafe terrace",
+caption: "Charming cafe culture in historic Europe",
+category: "travel"
+},
+{
+id: 20,
+src: "https://readdy.ai/api/search-image?query=urban%20rooftop%20garden%20in%20modern%20city%2C%20professional%20architectural%20photography%2C%20sustainable%20design%2C%20green%20space%2C%20city%20views%2C%20contemporary%20landscaping%2C%20peaceful%20oasis%2C%20ultra%20high%20resolution&width=800&height=600&seq=20&orientation=landscape",
+alt: "Urban rooftop garden",
+caption: "Modern rooftop oasis in the city",
+category: "urban"
+},
+{
+id: 21,
+src: "https://readdy.ai/api/search-image?query=majestic%20waterfall%20in%20lush%20rainforest%2C%20professional%20nature%20photography%2C%20long%20exposure%20effect%2C%20mist%20and%20spray%2C%20tropical%20vegetation%2C%20powerful%20water%20flow%2C%20pristine%20wilderness%2C%20ultra%20high%20resolution&width=800&height=600&seq=21&orientation=landscape",
+alt: "Rainforest waterfall",
+caption: "Powerful waterfall in pristine rainforest",
+category: "nature"
+},
+{
+id: 22,
+src: "https://readdy.ai/api/search-image?query=elegant%20interior%20of%20modern%20concert%20hall%2C%20professional%20architectural%20photography%2C%20dramatic%20lighting%2C%20acoustic%20design%20elements%2C%20sweeping%20curves%2C%20performance%20space%2C%20artistic%20venue%2C%20ultra%20high%20resolution&width=800&height=600&seq=22&orientation=landscape",
+alt: "Modern concert hall",
+caption: "Sophisticated design of contemporary concert venue",
+category: "architecture"
+},
+{
+id: 23,
+src: "https://readdy.ai/api/search-image?query=street%20musician%20performing%20passionately%2C%20professional%20documentary%20photography%2C%20authentic%20moment%2C%20urban%20culture%2C%20emotional%20expression%2C%20artistic%20performance%2C%20natural%20street%20setting%2C%20ultra%20high%20resolution&width=800&height=600&seq=23&orientation=landscape",
+alt: "Street musician performing",
+caption: "Passionate street performance capturing urban culture",
+category: "people"
+},
+{
+id: 24,
+src: "https://readdy.ai/api/search-image?query=arctic%20fox%20in%20winter%20coat%20against%20snowy%20landscape%2C%20professional%20wildlife%20photography%2C%20natural%20habitat%2C%20camouflage%2C%20winter%20scene%2C%20wildlife%20behavior%2C%20pristine%20environment%2C%20ultra%20high%20resolution&width=800&height=600&seq=24&orientation=landscape",
+alt: "Arctic fox in snow",
+caption: "Arctic fox perfectly camouflaged in winter landscape",
+category: "animals"
+},
+{
+id: 13,
+src: "https://readdy.ai/api/search-image?query=vibrant%20street%20food%20market%20in%20Tokyo%20at%20night%2C%20neon%20lights%20reflecting%20off%20wet%20streets%2C%20steam%20rising%20from%20food%20stalls%2C%20authentic%20cultural%20atmosphere%2C%20professional%20food%20photography%2C%20rich%20colors%20and%20textures%2C%20bustling%20night%20market%20scene%2C%20ultra%20high%20resolution&width=800&height=600&seq=13&orientation=landscape",
+alt: "Tokyo street food market",
+caption: "Vibrant night market scene in Tokyo",
+category: "food"
+},
+{
+id: 14,
+src: "https://readdy.ai/api/search-image?query=abstract%20architectural%20detail%20of%20modern%20building%20curves%20and%20lines%2C%20minimalist%20composition%2C%20dramatic%20light%20and%20shadow%20play%2C%20professional%20abstract%20photography%2C%20geometric%20patterns%2C%20clean%20design%2C%20artistic%20perspective%2C%20ultra%20high%20resolution&width=800&height=600&seq=14&orientation=landscape",
+alt: "Abstract architectural detail",
+caption: "Geometric abstraction in modern architecture",
+category: "abstract"
+},
+{
+id: 15,
+src: "https://readdy.ai/api/search-image?query=bustling%20urban%20street%20scene%20in%20New%20York%20City%20during%20rush%20hour%2C%20professional%20street%20photography%2C%20dynamic%20city%20life%2C%20yellow%20taxis%2C%20diverse%20crowd%2C%20towering%20skyscrapers%2C%20urban%20energy%2C%20ultra%20high%20resolution&width=800&height=600&seq=15&orientation=landscape",
+alt: "New York City street scene",
+caption: "Dynamic urban life in New York City",
+category: "urban"
+},
+{
+id: 16,
+src: "https://readdy.ai/api/search-image?query=ancient%20temple%20in%20Kyoto%20during%20cherry%20blossom%20season%2C%20traditional%20Japanese%20architecture%2C%20professional%20travel%20photography%2C%20pink%20petals%20falling%2C%20serene%20garden%2C%20cultural%20heritage%20site%2C%20mystical%20atmosphere%2C%20ultra%20high%20resolution&width=800&height=600&seq=16&orientation=landscape",
+alt: "Kyoto temple with cherry blossoms",
+caption: "Ancient temple amidst spring blossoms in Kyoto",
+category: "travel"
+},
+{
+id: 2,
+src: "https://readdy.ai/api/search-image?query=modern%20architectural%20photography%20of%20a%20sleek%20skyscraper%20with%20glass%20facade%20reflecting%20clouds%20and%20sky%2C%20geometric%20patterns%2C%20urban%20cityscape%2C%20professional%20architectural%20photography%2C%20dramatic%20perspective%2C%20clean%20lines%2C%20minimalist%20design%2C%20ultra%20high%20resolution&width=800&height=600&seq=2&orientation=landscape",
+alt: "Modern skyscraper architecture",
+caption: "Contemporary urban architecture with reflective surfaces",
+category: "architecture"
+},
+{
+id: 3,
+src: "https://readdy.ai/api/search-image?query=portrait%20photography%20of%20a%20diverse%20woman%20with%20natural%20lighting%2C%20soft%20bokeh%20background%2C%20authentic%20expression%2C%20professional%20studio%20portrait%2C%20fashion%20forward%20styling%2C%20expressive%20eyes%2C%20shallow%20depth%20of%20field%2C%20ultra%20high%20resolution&width=800&height=600&seq=3&orientation=portrait",
+alt: "Portrait of a woman",
+caption: "Expressive portrait with natural lighting",
+category: "people"
+},
+{
+id: 4,
+src: "https://readdy.ai/api/search-image?query=wildlife%20photography%20of%20a%20majestic%20lion%20in%20natural%20savanna%20habitat%2C%20golden%20hour%20lighting%2C%20professional%20wildlife%20photography%2C%20detailed%20fur%20texture%2C%20powerful%20pose%2C%20natural%20environment%2C%20safari%20scene%2C%20ultra%20high%20resolution&width=800&height=600&seq=4&orientation=landscape",
+alt: "Lion in savanna",
+caption: "Majestic lion in its natural habitat",
+category: "animals"
+},
+{
+id: 5,
+src: "https://readdy.ai/api/search-image?query=aerial%20photography%20of%20a%20pristine%20beach%20with%20turquoise%20water%20and%20white%20sand%2C%20tropical%20paradise%2C%20drone%20perspective%2C%20professional%20landscape%20photography%2C%20crystal%20clear%20water%2C%20palm%20trees%2C%20coastal%20beauty%2C%20ultra%20high%20resolution&width=800&height=600&seq=5&orientation=landscape",
+alt: "Aerial view of tropical beach",
+caption: "Pristine tropical coastline from above",
+category: "nature"
+},
+{
+id: 6,
+src: "https://readdy.ai/api/search-image?query=historical%20architecture%20photography%20of%20ancient%20roman%20colosseum%20at%20dusk%2C%20dramatic%20lighting%2C%20professional%20architectural%20photography%2C%20historical%20monument%2C%20stone%20texture%20details%2C%20ancient%20engineering%20marvel%2C%20tourist-free%20composition%2C%20ultra%20high%20resolution&width=800&height=600&seq=6&orientation=landscape",
+alt: "Roman Colosseum at dusk",
+caption: "Ancient Roman Colosseum bathed in evening light",
+category: "architecture"
+},
+{
+id: 7,
+src: "https://readdy.ai/api/search-image?query=candid%20street%20photography%20of%20diverse%20people%20in%20a%20busy%20market%2C%20authentic%20cultural%20scene%2C%20professional%20documentary%20photography%2C%20vibrant%20colors%2C%20human%20interaction%2C%20storytelling%20composition%2C%20natural%20expressions%2C%20ultra%20high%20resolution&width=800&height=600&seq=7&orientation=landscape",
+alt: "People at a busy market",
+caption: "Vibrant street life at a local market",
+category: "people"
+},
+{
+id: 8,
+src: "https://readdy.ai/api/search-image?query=underwater%20photography%20of%20colorful%20coral%20reef%20with%20tropical%20fish%2C%20vibrant%20marine%20ecosystem%2C%20professional%20underwater%20photography%2C%20clear%20blue%20water%2C%20diverse%20sea%20life%2C%20natural%20light%20rays%20penetrating%20water%20surface%2C%20ultra%20high%20resolution&width=800&height=600&seq=8&orientation=landscape",
+alt: "Underwater coral reef",
+caption: "Vibrant underwater ecosystem with diverse marine life",
+category: "nature"
+},
+{
+id: 9,
+src: "https://readdy.ai/api/search-image?query=macro%20photography%20of%20a%20butterfly%20on%20a%20flower%2C%20extreme%20detail%20of%20wings%20and%20antenna%2C%20professional%20nature%20photography%2C%20vibrant%20colors%2C%20shallow%20depth%20of%20field%2C%20natural%20garden%20setting%2C%20delicate%20textures%2C%20ultra%20high%20resolution&width=800&height=600&seq=9&orientation=landscape",
+alt: "Butterfly on flower macro",
+caption: "Intricate details of a butterfly resting on a vibrant flower",
+category: "animals"
+},
+{
+id: 10,
+src: "https://readdy.ai/api/search-image?query=futuristic%20architecture%20photography%20of%20a%20modern%20museum%20interior%20with%20sweeping%20curves%20and%20natural%20light%2C%20professional%20architectural%20photography%2C%20minimalist%20design%2C%20grand%20space%2C%20artistic%20interior%2C%20geometric%20patterns%2C%20ultra%20high%20resolution&width=800&height=600&seq=10&orientation=landscape",
+alt: "Modern museum interior",
+caption: "Sweeping curves of a contemporary museum space",
+category: "architecture"
+},
+{
+id: 11,
+src: "https://readdy.ai/api/search-image?query=environmental%20portrait%20of%20an%20elderly%20craftsman%20in%20workshop%2C%20storytelling%20composition%2C%20professional%20documentary%20photography%2C%20natural%20lighting%2C%20authentic%20environment%2C%20weathered%20hands%2C%20traditional%20craftsmanship%2C%20rich%20textures%2C%20ultra%20high%20resolution&width=800&height=600&seq=11&orientation=portrait",
+alt: "Elderly craftsman in workshop",
+caption: "Master craftsman with decades of experience",
+category: "people"
+},
+{
+id: 12,
+src: "https://readdy.ai/api/search-image?query=wildlife%20photography%20of%20wild%20horses%20running%20free%20in%20a%20meadow%2C%20motion%20capture%2C%20professional%20wildlife%20photography%2C%20natural%20environment%2C%20dynamic%20action%2C%20golden%20hour%20lighting%2C%20herd%20behavior%2C%20dust%20clouds%2C%20ultra%20high%20resolution&width=800&height=600&seq=12&orientation=landscape",
+alt: "Wild horses running",
+caption: "Wild horses galloping freely across open plains",
+category: "animals"
+}
+];
+// Populate gallery
+const galleryGrid = document.getElementById('galleryGrid');
+function renderGallery(items) {
+galleryGrid.innerHTML = '';
+items.forEach(item => {
+const galleryItem = document.createElement('div');
+galleryItem.className = 'gallery-item fade-in';
+galleryItem.setAttribute('data-id', item.id);
+galleryItem.setAttribute('data-category', item.category);
+const img = document.createElement('img');
+img.src = item.src;
+img.alt = item.alt;
+img.loading = 'lazy';
+galleryItem.appendChild(img);
+galleryGrid.appendChild(galleryItem);
+galleryItem.addEventListener('click', () => openModal(item.id));
+});
+}
+// Initial render
+renderGallery(galleryItems);
+// Modal functionality
+const modal = document.getElementById('imageModal');
+const modalImage = document.getElementById('modalImage');
+const modalCaption = document.getElementById('modalCaption');
+const modalClose = document.getElementById('modalClose');
+const modalPrev = document.getElementById('modalPrev');
+const modalNext = document.getElementById('modalNext');
+let currentImageId = null;
+function openModal(imageId) {
+currentImageId = imageId;
+const item = galleryItems.find(item => item.id === imageId);
+if (item) {
+modalImage.src = item.src;
+modalImage.alt = item.alt;
+modalCaption.textContent = item.caption;
+modal.classList.add('active');
+document.body.style.overflow = 'hidden';
+}
+}
+function closeModal() {
+modal.classList.remove('active');
+document.body.style.overflow = '';
+currentImageId = null;
+}
+function navigateImage(direction) {
+const currentIndex = galleryItems.findIndex(item => item.id === currentImageId);
+const visibleItems = getVisibleItems();
+const visibleIndices = visibleItems.map(item => galleryItems.findIndex(galleryItem => galleryItem.id === item.id));
+let nextIndex;
+if (direction === 'next') {
+const currentVisibleIndex = visibleIndices.indexOf(currentIndex);
+nextIndex = currentVisibleIndex < visibleIndices.length - 1 ? visibleIndices[currentVisibleIndex + 1] : visibleIndices[0];
+} else {
+const currentVisibleIndex = visibleIndices.indexOf(currentIndex);
+nextIndex = currentVisibleIndex > 0 ? visibleIndices[currentVisibleIndex - 1] : visibleIndices[visibleIndices.length - 1];
+}
+if (nextIndex !== -1) {
+openModal(galleryItems[nextIndex].id);
+}
+}
+function getVisibleItems() {
+const activeCategory = document.querySelector('.category-option.active').getAttribute('data-category');
+return activeCategory === 'all' ? galleryItems : galleryItems.filter(item => item.category === activeCategory);
+}
+modalClose.addEventListener('click', closeModal);
+modalPrev.addEventListener('click', () => navigateImage('prev'));
+modalNext.addEventListener('click', () => navigateImage('next'));
+modal.addEventListener('click', function(e) {
+if (e.target === modal) {
+closeModal();
+}
+});
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+if (!modal.classList.contains('active')) return;
+if (e.key === 'Escape') {
+closeModal();
+} else if (e.key === 'ArrowLeft') {
+navigateImage('prev');
+} else if (e.key === 'ArrowRight') {
+navigateImage('next');
+}
+});
+// Category filter
+const categoryButton = document.getElementById('categoryButton');
+const categoryDropdown = document.getElementById('categoryDropdown');
+const categoryOptions = document.querySelectorAll('.category-option');
+categoryButton.addEventListener('click', function() {
+categoryDropdown.classList.toggle('show');
+});
+categoryOptions.forEach(option => {
+option.addEventListener('click', function() {
+const category = this.getAttribute('data-category');
+// Update active state
+categoryOptions.forEach(opt => opt.classList.remove('active'));
+this.classList.add('active');
+// Update button text
+categoryButton.querySelector('span').textContent = this.textContent;
+// Filter gallery
+if (category === 'all') {
+renderGallery(galleryItems);
+} else {
+const filteredItems = galleryItems.filter(item => item.category === category);
+renderGallery(filteredItems);
+}
+// Close dropdown
+categoryDropdown.classList.remove('show');
+});
+});
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+if (!categoryButton.contains(e.target) && !categoryDropdown.contains(e.target)) {
+categoryDropdown.classList.remove('show');
+}
+});
+// Theme toggle
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+themeToggle.addEventListener('change', function() {
+const isDarkMode = this.checked;
+const elements = {
+body: document.body,
+header: document.querySelector('header'),
+title: document.querySelector('h1'),
+headings: document.querySelectorAll('h2, h3'),
+categoryButton: document.getElementById('categoryButton'),
+categoryDropdown: document.getElementById('categoryDropdown'),
+categoryOptions: document.querySelectorAll('.category-option'),
+modal: document.getElementById('imageModal')
+};
+if (isDarkMode) {
+elements.body.classList.add('dark-theme');
+elements.body.style.backgroundColor = '#1f2937';
+elements.body.style.color = '#f9fafb';
+elements.header.style.backgroundColor = '#111827';
+elements.header.style.borderBottom = '1px solid #374151';
+elements.title.style.color = '#f9fafb';
+elements.headings.forEach(el => el.style.color = '#f9fafb');
+elements.categoryButton.style.backgroundColor = '#374151';
+elements.categoryButton.style.borderColor = '#4b5563';
+elements.categoryButton.style.color = '#f9fafb';
+elements.categoryDropdown.style.backgroundColor = '#1f2937';
+elements.categoryDropdown.style.borderColor = '#4b5563';
+elements.categoryOptions.forEach(option => {
+option.style.color = '#f9fafb';
+option.style.backgroundColor = 'transparent';
+if (option.classList.contains('active')) {
+option.style.backgroundColor = '#374151';
+}
+});
+elements.modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+} else {
+elements.body.classList.remove('dark-theme');
+elements.body.style.backgroundColor = '#f9fafb';
+elements.body.style.color = '#1f2937';
+elements.header.style.backgroundColor = '#ffffff';
+elements.header.style.borderBottom = 'none';
+elements.title.style.color = '#1f2937';
+elements.headings.forEach(el => el.style.color = '#1f2937');
+elements.categoryButton.style.backgroundColor = '#ffffff';
+elements.categoryButton.style.borderColor = '#e5e7eb';
+elements.categoryButton.style.color = '#1f2937';
+elements.categoryDropdown.style.backgroundColor = '#ffffff';
+elements.categoryDropdown.style.borderColor = '#e5e7eb';
+elements.categoryOptions.forEach(option => {
+option.style.color = '#1f2937';
+option.style.backgroundColor = 'transparent';
+if (option.classList.contains('active')) {
+option.style.backgroundColor = '#ebe9fe';
+}
+});
+elements.modal.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+}
+document.querySelectorAll('.category-option').forEach(option => {
+option.addEventListener('mouseover', function() {
+this.style.backgroundColor = isDarkMode ? '#374151' : '#f3f4f6';
+});
+option.addEventListener('mouseout', function() {
+if (!this.classList.contains('active')) {
+this.style.backgroundColor = 'transparent';
+}
+});
+});
+});
+});
+</script>
+</body>
+</html>
